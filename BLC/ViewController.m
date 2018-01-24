@@ -58,19 +58,38 @@
     }
 }
 
-//4.连接外设成功
+//4.服务器连接外设成功
 -(void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral{
     NSLog(@"连接外设成功 : %@",peripheral);
     [peripheral discoverServices:nil];
     [central stopScan];
 }
 
-//连接服务
+//外设连接服务器
 -(void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error{
     NSLog(@"services:%@",peripheral.services);
+    for (CBService *service in peripheral.services) {
+        //服务器提供的uuid与设备的uuid相同，则外设开始和服务器交互
+        if ([service.UUID.UUIDString isEqualToString:@""]) {
+            [service.peripheral discoverCharacteristics:nil forService:service];
+        }
+    }
 }
 
+-(void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(nonnull CBService *)service error:(nullable NSError *)error{
+    NSLog(@"---%@----",service.characteristics);
+    for (CBCharacteristic *chtcs in service.characteristics) {
+        [_cp discoverDescriptorsForCharacteristic:chtcs];
+        [_cp readValueForCharacteristic:chtcs];
+    }
+}
 
+-(void)peripheral:(CBPeripheral *)peripheral didDiscoverDescriptorsForCharacteristic:(nonnull CBCharacteristic *)characteristic error:(nullable NSError *)error{
+    NSLog(@"%@",characteristic);
+    for (CBDescriptor *desp in characteristic.descriptors) {
+        [_cp readValueForDescriptor:desp];
+    }
+}
 
 
 
